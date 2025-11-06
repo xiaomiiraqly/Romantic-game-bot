@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы требований
+# Updated: removed sqlite3 from requirements.txt (it's built-in Python module)
 COPY requirements.txt .
 
 # Устанавливаем Python зависимости
