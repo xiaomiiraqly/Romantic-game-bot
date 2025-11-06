@@ -2414,10 +2414,10 @@ _{category_info['description']}_
         elif data == "admin_stats":
             await self.show_admin_stats(query)
         elif data == "admin_users":
-            await self.show_admin_users(query)
+            await self.show_admin_users(query, page=None)
         elif data.startswith("admin_users_page_"):
             page = int(data.split("_")[-1])
-            await self.show_admin_users(query, page)
+            await self.show_admin_users(query, page=page)
         elif data == "admin_access_management":
             await self.show_admin_access_management(query)
         elif data == "admin_search_users":
@@ -3011,7 +3011,7 @@ _{category_info['description']}_
             parse_mode='Markdown'
         )
 
-    async def show_admin_users(self, query, page: int = 1):
+    async def show_admin_users(self, query, page: int = None):
         """Показать управление пользователями"""
         # Проверяем права - только владелец может управлять пользователями
         if not self.is_owner(query.from_user):
@@ -3019,7 +3019,7 @@ _{category_info['description']}_
             return
         
         try:
-            if page == 1:
+            if page is None:
                 # Показываем последние 5 пользователей
                 recent_users = self.db.get_recent_users(5)
                 text = """👥 **Управление пользователями**
@@ -3028,6 +3028,7 @@ _{category_info['description']}_
 
 """
                 show_pagination = False
+                pagination_data = None
             else:
                 # Показываем пользователей с пагинацией
                 pagination_data = self.db.get_users_paginated(page, 10)
