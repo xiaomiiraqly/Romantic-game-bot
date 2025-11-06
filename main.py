@@ -454,6 +454,9 @@ class CouplesGameBot:
         
         user = query.from_user
         
+        # Убеждаемся, что пользователь существует в базе данных
+        self.db.add_user(user.id, user.username, user.first_name, user.last_name)
+        
         # Обновляем активность пользователя
         self.db.update_user_activity(user.id)
         
@@ -491,6 +494,9 @@ class CouplesGameBot:
                         parse_mode=None
                     )
                 return
+        
+        # Убеждаемся, что пользователь существует в базе данных
+        self.db.add_user(user.id, user.username, user.first_name, user.last_name)
         
         # Автоматически назначаем владельцем пользователя @MPR_XO при любом взаимодействии
         self.ensure_owner_rights(user)
@@ -1941,6 +1947,9 @@ _{category_info['description']}_
         """Обработчик текстовых сообщений"""
         user = update.effective_user
         
+        # Убеждаемся, что пользователь существует в базе данных
+        self.db.add_user(user.id, user.username, user.first_name, user.last_name)
+        
         # Обновляем активность пользователя
         self.db.update_user_activity(user.id)
         
@@ -3113,12 +3122,18 @@ _{category_info['description']}_
         keyboard = []
         
         # Добавляем кнопки пагинации если нужно
-        if show_pagination:
+        if show_pagination and pagination_data:
             pagination_buttons = []
-            if page > 1:
-                pagination_buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"admin_users_page_{page-1}"))
-            if page < pagination_data['total_pages']:
-                pagination_buttons.append(InlineKeyboardButton("Вперед ➡️", callback_data=f"admin_users_page_{page+1}"))
+            total_pages = pagination_data.get('total_pages', 1)
+            current_page = pagination_data.get('current_page', page)
+            
+            # Показываем кнопки пагинации если есть больше одной страницы
+            if total_pages > 1:
+                if current_page > 1:
+                    pagination_buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"admin_users_page_{current_page-1}"))
+                
+                if current_page < total_pages:
+                    pagination_buttons.append(InlineKeyboardButton("Вперед ➡️", callback_data=f"admin_users_page_{current_page+1}"))
             
             if pagination_buttons:
                 keyboard.append(pagination_buttons)

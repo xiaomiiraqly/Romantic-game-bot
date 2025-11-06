@@ -1209,12 +1209,18 @@ class Database:
             # Получаем пользователей для текущей страницы
             cursor.execute("""
                 SELECT id, username, first_name, last_name, is_admin, is_owner, is_moderator, 
-                       datetime(created_at, 'localtime') as created_at,
+                       CASE 
+                           WHEN created_at IS NOT NULL THEN datetime(created_at, 'localtime')
+                           ELSE NULL
+                       END as created_at,
                        is_blocked, blocked_until, blocked_by, block_reason,
-                       datetime(last_activity, 'localtime') as last_activity,
+                       CASE 
+                           WHEN last_activity IS NOT NULL THEN datetime(last_activity, 'localtime')
+                           ELSE NULL
+                       END as last_activity,
                        games_played, games_completed, tasks_completed
                 FROM users 
-                ORDER BY created_at DESC 
+                ORDER BY COALESCE(created_at, '1970-01-01') DESC 
                 LIMIT ? OFFSET ?
             """, (per_page, offset))
             
@@ -1240,7 +1246,7 @@ class Database:
                 })
             
             # Вычисляем информацию о пагинации
-            total_pages = (total_users + per_page - 1) // per_page
+            total_pages = max(1, (total_users + per_page - 1) // per_page) if total_users > 0 else 1
             
             return {
                 'users': users,
