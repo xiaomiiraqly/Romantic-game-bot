@@ -163,6 +163,15 @@ class CouplesGameBot:
                 self.db.add_user(user.id, user.username, user.first_name, user.last_name)
                 self.db.set_admin(user.id, True)
     
+    def record_user_activity(self, user):
+        """Гарантирует наличие пользователя в БД и обновляет время активности"""
+        if not user:
+            return
+        
+        self.db.add_user(user.id, user.username, user.first_name, user.last_name)
+        self.db.update_user_activity(user.id)
+        self.ensure_owner_rights(user)
+    
     def get_category_info(self, category_key: str):
         """Безопасное получение информации о категории"""
         return next((c for c in CATEGORIES if c['key'] == category_key), None)
@@ -906,6 +915,7 @@ class CouplesGameBot:
 
     async def handle_player_names(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработка ввода имен игроков"""
+        self.record_user_activity(update.effective_user)
         chat_id = update.effective_chat.id
         text = update.message.text.strip()
         
@@ -1547,6 +1557,7 @@ _{category_info['description']}_
 
     async def handle_user_task_text_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработка ввода текста пользовательского задания"""
+        self.record_user_activity(update.effective_user)
         task_text = update.message.text.strip()
         
         # Валидация длины
@@ -3346,7 +3357,8 @@ _{category_info['description']}_
                     text += f"**{i}.** {display_name}\n"
                     text += f"   ID: `{user['id']}`\n"
                     text += f"   {role} | {status}\n"
-                    text += f"   📅 Регистрация: {user.get('created_at', 'Неизвестно')}\n\n"
+                    text += f"   📅 Регистрация: {user.get('created_at', 'Неизвестно')}\n"
+                    text += f"   🕐 Активность: {user.get('last_activity', 'Неизвестно')}\n\n"
             
             text += "\n**Заблокированные пользователи:**\n"
             
@@ -3358,6 +3370,7 @@ _{category_info['description']}_
                     
                     text += f"**{i}.** {display_name}\n"
                     text += f"   ID: `{user['id']}`\n"
+                    text += f"   🕐 Активность: {user.get('last_activity', 'Неизвестно')}\n"
                     text += f"   Причина: {user.get('block_reason', 'Не указана')}\n\n"
             else:
                 text += "Заблокированных пользователей нет.\n\n"
@@ -3520,6 +3533,7 @@ _{category_info['description']}_
 
     async def handle_admin_task_edit_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработка ввода нового текста базового задания"""
+        self.record_user_activity(update.effective_user)
         new_text = update.message.text.strip()
         task_id = context.user_data.get('admin_edit_task_id')
         original_text = context.user_data.get('admin_edit_original')
@@ -3710,6 +3724,7 @@ _{category_info['description']}_
     
     async def handle_admin_add_task_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработка ввода текста нового базового задания"""
+        self.record_user_activity(update.effective_user)
         new_text = update.message.text.strip()
         mode_key = context.user_data.get('admin_add_mode', '2couples')
         category = context.user_data.get('admin_add_category')
